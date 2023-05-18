@@ -1,0 +1,29 @@
+{
+    "sites":[
+    {
+        "url":"https://audiobooksfreelisten.com/",
+        "search":"?s=",
+        "filters":["category","tag","#"],
+        "container":"div",
+        "classname":"generate-columns-container",
+        "page":"No"
+    },
+    {
+        "url":"https://goldenaudiobook.com/",
+        "search":"?s=",
+        "filters":["category","dailyaudiobooks","/?s"],
+        "container":"div",
+        "classname":"site-content-wrapper",
+        "page":"post-page-numbers"
+    },
+    {
+        "url":"https://fulllengthaudiobook.com/",
+        "search":"?s=",
+        "filters":["category","/?s",".mp3","author","books","tag"],
+        "container":"section",
+        "classname":"primary",
+        "page":"post-page-numbers"
+    }
+]
+}
+
