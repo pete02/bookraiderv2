@@ -39,3 +39,9 @@ impl PartialEq for Sites {
 pub struct BookPayload {
     pub book: String,
 }
+
+
+#[derive(Debug, Deserialize)]
+pub struct UrlPayload {
+    pub url: String,
+}

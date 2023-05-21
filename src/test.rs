@@ -4,8 +4,8 @@ use select::document::Document;
 
 use select::predicate::Name;
 
-use crate::structs::Site;
-use crate::structs::Sites;
+use crate::utils::structs::Site;
+use crate::utils::structs::Sites;
 use crate::http::make_request;
 use crate::http::get_response;
 

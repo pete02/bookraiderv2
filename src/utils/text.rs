@@ -1,5 +1,5 @@
 use std::fs;
-use crate::structs::Sites;
+use crate::utils::structs::Sites;
 use regex::Regex;
 
 pub fn readfile(file:&str)->Result<String, std::io::Error>{

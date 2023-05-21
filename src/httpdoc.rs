@@ -2,7 +2,7 @@ use select::document::Document;
 use select::node::Node;
 use select::predicate::Name;
 
-use crate::structs::Site;
+use crate::utils::structs::Site;
 use crate::utils::checks::check_text_contains_filter;
 
 pub fn find_url<'a, 'b>(node: &'a Node<'b>, excluded_class: &str,filters:&Vec<String>) -> Vec<String> {

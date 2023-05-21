@@ -3,7 +3,7 @@
     {
         "url":"https://audiobooksfreelisten.com/",
         "search":"?s=",
-        "filters":["category","tag","#"],
+        "filters":["category","tag","#","/page/"],
         "container":"div",
         "classname":"generate-columns-container",
         "page":"No"

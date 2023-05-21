@@ -3,7 +3,7 @@ use select::document::Document;
 use futures::future::{join_all};
 
 
-use crate::structs::Site;
+use crate::utils::structs::Site;
 use crate::http::make_request;
 use crate::http::get_response;
 
