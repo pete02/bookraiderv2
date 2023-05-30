@@ -1,21 +1,24 @@
 
 use actix_web::web::Path;
-use actix_web::{HttpServer, App, middleware::Logger,get,web::Json,post};
-use httpdoc::find_sites;
+use actix_web::{HttpServer, App, middleware::Logger,get,web::Json,post,Responder,HttpResponse};
+mod https{pub mod http; pub mod handlers;pub mod httpdoc; pub mod mp3;}
 mod utils{pub mod text; pub mod checks; pub mod structs;}
 use std::time::{Instant};
 
+
 use utils::structs::BookPayload;
-mod httpdoc;
 use utils::text::create_json;
 use utils::text::readfile;
 use utils::structs::Sites;
 use utils::structs::UrlPayload;
+use https::httpdoc::find_sites;
 
-mod http;
-mod handlers;
-use handlers::search_audio_books;
-use handlers::get_audiobook;
+use utils::structs::Site;
+
+use https::handlers::search_audio_books;
+use https::handlers::get_audiobook;
+
+
 
 
 fn get_sites()->Result<Sites,String>{
@@ -33,7 +36,7 @@ fn get_sites()->Result<Sites,String>{
 }
 
 #[get("/search/{book}")]
-async fn get_task(book:Path<BookPayload>)->Json<Vec<Vec<String>>>{
+async fn get_task(book:Path<BookPayload>)->Json<Vec<Vec<(String,String)>>>{
     let start=Instant::now();
     let sites=get_sites();
     match sites {
@@ -46,16 +49,17 @@ async fn get_task(book:Path<BookPayload>)->Json<Vec<Vec<String>>>{
             println!("request: {:?}",Instant::now()-s);
             match res{
                 Ok(r)=>return Json(r),
-                Err(_)=>return Json([["error in search".to_owned()].to_vec()].to_vec())
+                Err(_)=>return Json([[("error in search".to_owned(),"".to_string())].to_vec()].to_vec())
             }
         }
-        Err(e)=>return Json([[e].to_vec()].to_vec())
+        Err(e)=>return Json([[(e,"".to_string())].to_vec()].to_vec())
 
     }
 }
 
+
 #[post("/get")]
-async fn get_book(url:Json<UrlPayload>)->Json<Vec<String>>{
+async fn get_book(url:Json<UrlPayload>)->Json<String>{
     let sites=get_sites();
     match sites{
         Ok(sites)=>{
@@ -64,27 +68,60 @@ async fn get_book(url:Json<UrlPayload>)->Json<Vec<String>>{
                 Ok(s)=>{
                     let vec=get_audiobook(&url.url, s).await;
                     match vec {
-                        Ok(vec)=>Json(vec),
-                        Err(_)=>Json(["not found books".to_owned()].to_vec())
+                        Ok(_)=>Json("done".to_owned()),
+                        Err(e)=>Json(e.to_string())
                     }
                 }
-                Err(_)=>Json(["error in finding the site".to_owned()].to_vec())
+                Err(e)=>Json(e)
             }
         },
-        Err(e)=>Json([e].to_vec())
+        Err(e)=>Json(e)
     }
 }
+
+#[post("/add")]
+async fn add_site(site: Json<Site>) -> impl Responder {
+    // Load sites from sites.json
+    let file=utils::text::readfile("sites.json");
+    let sitesres;
+    match file{
+        Ok(s)=>sitesres=create_json(s),
+        Err(_)=>return HttpResponse::InternalServerError().body("Failed to read file")
+    }
+    let mut sites;
+    match sitesres {
+        Ok(s)=>sites=s,
+        Err(_)=> return HttpResponse::InternalServerError().body("Failed to create sites"),//http error: create sites
+    }
+
+    // Add the received site to the vector
+    sites.sites.push(site.into_inner());
+
+    // Serialize the updated vector to JSON
+    let json_data = serde_json::to_string_pretty(&sites).unwrap();
+
+    // Write the JSON data back to sites.json
+    match utils::text::write_sites(json_data.as_str(), "sites.json"){
+        Ok(_)=>return HttpResponse::Ok().body("Site added successfully!"),
+        Err(_)=> HttpResponse::InternalServerError().body("Failed to write file")
+    }
+
+    
+}
+
 
 //main
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
+    let timer=Instant::now();
+    println!("{:?}",Instant::now()-timer);
     HttpServer::new(move || {
         let logger = Logger::default();
         App::new()
             .wrap(logger)
             .service(get_task)
             .service(get_book)
+            .service(add_site)
     })
     .bind(("0.0.0.0", 3000))?
     .run()

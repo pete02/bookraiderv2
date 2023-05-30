@@ -6,14 +6,14 @@ use select::predicate::Name;
 
 use crate::utils::structs::Site;
 use crate::utils::structs::Sites;
-use crate::http::make_request;
-use crate::http::get_response;
+use crate::https::http::make_request;
+use crate::https::http::get_response;
 
 
 use crate::utils::checks;
 use checks::check_audio_format;
 
-use crate::httpdoc;
+use crate::https::httpdoc;
 use httpdoc::find_sites;
 use httpdoc::find_url_include;
 use httpdoc::get_node;
@@ -24,6 +24,8 @@ use checks::check_text_contains_filter;
 
 use super::*;
 
+
+
 #[test]
 fn test_site_equal(){
     let a:Site=Site{
@@ -32,7 +34,8 @@ fn test_site_equal(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     let b:Site=Site{
         url:"https://audiobooksfreelisten.com/".to_string(),
@@ -40,7 +43,8 @@ fn test_site_equal(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     assert_eq!(a,b);
 
@@ -50,7 +54,8 @@ fn test_site_equal(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     let b:Site=Site{
         url:"https://audiobooksfreelisten.com/".to_string(),
@@ -58,7 +63,8 @@ fn test_site_equal(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"ye".to_string()
+        page:"ye".to_string(),
+        title:"bookmark".to_string()
     };
     assert_ne!(a,b)
 }
@@ -79,7 +85,8 @@ fn test_createjson(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     let s=Sites{
         sites:[a].to_vec(),
@@ -239,7 +246,8 @@ fn test_findsite(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     let b:Site=Site{
         url:"https://google.com/".to_string(),
@@ -247,7 +255,8 @@ fn test_findsite(){
         filters:["category".to_string(),"tag".to_string(),"#".to_string()].to_vec(),
         container:"div".to_string(),
         classname:"generate-columns-container".to_string(),
-        page:"No".to_string()
+        page:"No".to_string(),
+        title:"bookmark".to_string()
     };
     let sites=Sites{
         sites:[a,b].to_vec()

@@ -1,6 +1,10 @@
-use std::fs;
+use std::{fs, io::Write};
 use crate::utils::structs::Sites;
 use regex::Regex;
+use std::fs::{OpenOptions};
+use std::io::Error;
+
+
 
 pub fn readfile(file:&str)->Result<String, std::io::Error>{
     fs::read_to_string(file)
@@ -26,4 +30,14 @@ pub fn find_audio_links(html: &str,audio_format:&str) -> Vec<String> {
     
     unique_links.dedup();
     unique_links
+}
+
+
+pub fn write_sites(json_data: &str,file:&str) -> Result<(), Error> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(file)?;
+    file.write_all(json_data.as_bytes())?;
+    Ok(())
 }

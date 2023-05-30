@@ -10,6 +10,7 @@ pub struct Site {
     pub container: String,
     pub classname: String,
     pub page: String,
+    pub title:String,
 }
 
 impl PartialEq for Site {
@@ -44,4 +45,11 @@ pub struct BookPayload {
 #[derive(Debug, Deserialize)]
 pub struct UrlPayload {
     pub url: String,
+}
+
+
+#[derive(Serialize, Deserialize)]
+struct Link {
+    url: String,
+    name: String,
 }
