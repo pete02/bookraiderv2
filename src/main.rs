@@ -1,19 +1,22 @@
 
 use actix_web::web::Path;
 use actix_web::{HttpServer, App, middleware::Logger,get,web::Json,post,Responder,HttpResponse};
-mod https{pub mod http; pub mod handlers;pub mod httpdoc; pub mod mp3;}
+mod https{pub mod http; pub mod handlers;pub mod httpdoc; pub mod mp3; pub mod bookdata;}
 mod utils{pub mod text; pub mod checks; pub mod structs;}
 use std::time::{Instant};
-
-
+use serde_json::json;
 use utils::structs::BookPayload;
 use utils::text::create_json;
 use utils::text::readfile;
 use utils::structs::Sites;
 use utils::structs::UrlPayload;
 use https::httpdoc::find_sites;
-
 use utils::structs::Site;
+use utils::structs::GetResponse;
+
+use std::fs;
+use std::io::{Write, Read};
+use std::fs::File;
 
 use https::handlers::search_audio_books;
 use https::handlers::get_audiobook;
@@ -36,7 +39,7 @@ fn get_sites()->Result<Sites,String>{
 }
 
 #[get("/search/{book}")]
-async fn get_task(book:Path<BookPayload>)->Json<Vec<Vec<(String,String)>>>{
+async fn get_task(book:Path<BookPayload>)->Json<Vec<serde_json::Value>>{
     let start=Instant::now();
     let sites=get_sites();
     match sites {
@@ -49,33 +52,85 @@ async fn get_task(book:Path<BookPayload>)->Json<Vec<Vec<(String,String)>>>{
             println!("request: {:?}",Instant::now()-s);
             match res{
                 Ok(r)=>return Json(r),
-                Err(_)=>return Json([[("error in search".to_owned(),"".to_string())].to_vec()].to_vec())
+                Err(_)=>return Json([json!([["error in search"]])].to_vec())
             }
         }
-        Err(e)=>return Json([[(e,"".to_string())].to_vec()].to_vec())
+        Err(e)=>return Json([json!([[e]])].to_vec())
 
     }
 }
 
 
 #[post("/get")]
-async fn get_book(url:Json<UrlPayload>)->Json<String>{
+async fn get_book(url:Json<UrlPayload>)-> impl Responder{
     let sites=get_sites();
+    println!("{:?}",url);
     match sites{
         Ok(sites)=>{
             let site=find_sites(&url.url, &sites.sites);
             match site {
                 Ok(s)=>{
-                    let vec=get_audiobook(&url.url, s).await;
+                    let vec=get_audiobook(&url.url, s, &url.name).await;
                     match vec {
-                        Ok(_)=>Json("done".to_owned()),
-                        Err(e)=>Json(e.to_string())
+                        Ok(_)=>{
+                            let res=GetResponse{
+                                name:url.name.to_string(),
+                                url:url.url.to_string(),
+                                response:200,
+                            };
+
+                           match save(res){
+                            Ok(_)=>println!("done"),
+                            Err(_)=>println!("err in writing")
+                           }
+                            return HttpResponse::Ok().json(Json("done".to_owned()))
+                        }
+                        Err(e)=>{
+                            let res=GetResponse{
+                                name:url.name.to_string(),
+                                url:url.url.to_string(),
+                                response:500,
+                            };
+
+                           match save(res){
+                            Ok(_)=>println!("done"),
+                            Err(_)=>println!("err in writing")
+                           }
+                           delete_temp_files();
+                        return HttpResponse::InternalServerError().json(Json(e.to_string()))
+                        }
                     }
                 }
-                Err(e)=>Json(e)
+                Err(e)=>{
+                    let res=GetResponse{
+                        name:url.name.to_string(),
+                        url:url.url.to_string(),
+                        response:500,
+                    };
+
+                   match save(res){
+                    Ok(_)=>println!("done"),
+                    Err(_)=>println!("err in writing")
+                   }
+                   delete_temp_files();
+                return HttpResponse::InternalServerError().json(Json(e.to_string()))
+                }
             }
         },
-        Err(e)=>Json(e)
+        Err(e)=>{
+            let res=GetResponse{
+                name:url.name.to_string(),
+                url:url.url.to_string(),
+                response:500,
+            };
+
+           match save(res){
+            Ok(_)=>println!("done"),
+            Err(_)=>println!("err in writing")
+           }
+           delete_temp_files();
+        return HttpResponse::InternalServerError().json(Json(e.to_string()))
+        }
     }
 }
 
@@ -110,6 +165,39 @@ async fn add_site(site: Json<Site>) -> impl Responder {
 }
 
 
+#[get("/res")]
+async fn sen()-> impl Responder{
+    match load() {
+        Ok(a)=>return HttpResponse::Ok().json(a),
+        Err(a)=>return HttpResponse::InternalServerError().body(a.to_string())
+    }
+}
+
+fn save(res:GetResponse)->Result<(), Box<dyn std::error::Error>>{
+    let mut file = File::create("save.json")?;
+    file.write_all(serde_json::to_string(&res)?.as_bytes())?;
+    Ok(())
+}
+
+fn delete_temp_files() -> Result<(), std::io::Error> {
+    for entry in fs::read_dir("temp")? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() {
+            fs::remove_file(path)?;
+        }
+    }
+    Ok(())
+}
+
+fn load()->Result<GetResponse,Box<dyn std::error::Error>>{
+    let mut f=File::open("save.json")?;
+    let mut json=String::new();
+    f.read_to_string(&mut json)?;
+    let res:GetResponse=serde_json::from_str(&json)?;
+    Ok(res)
+}
+
 //main
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -122,11 +210,12 @@ async fn main() -> std::io::Result<()> {
             .service(get_task)
             .service(get_book)
             .service(add_site)
+            .service(sen)
+            .service(actix_files::Files::new("/", "./frontend/build").index_file("index.html"))
+            
     })
     .bind(("0.0.0.0", 3000))?
     .run()
     .await
 }
 
-#[cfg(test)]
-mod test;

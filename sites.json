@@ -12,7 +12,8 @@
       "container": "div",
       "classname": "generate-columns-container",
       "page": "No",
-      "title": "bookmark"
+      "title": "bookmark",
+      "head": "audiobookfreelisten"
     },
     {
       "url": "https://goldenaudiobook.com/",
@@ -25,7 +26,8 @@
       "container": "div",
       "classname": "site-content-wrapper",
       "page": "post-page-numbers",
-      "title": "bookmark"
+      "title": "bookmark",
+      "head": "golden audiobooks"
     },
     {
       "url": "https://fulllengthaudiobook.com/",
@@ -41,7 +43,8 @@
       "container": "section",
       "classname": "primary",
       "page": "post-page-numbers",
-      "title": "bookmark"
+      "title": "bookmark",
+      "head": "fulllength audiobooks"
     }
   ]
 }

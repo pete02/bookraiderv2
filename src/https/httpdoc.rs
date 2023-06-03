@@ -3,45 +3,48 @@ use select::node::Node;
 use select::predicate::Name;
 
 use crate::utils::structs::Site;
-use crate::utils::checks::check_text_contains_filter;
-pub fn find_url<'a, 'b>(node: &'a Node<'b>, excluded_class: &str, filters: &Vec<String>,title:&String) -> Vec<(String,String)> {
-    let urls: Vec<(String, String)>;
+use crate::utils::structs::Link;
+
+
+pub fn find_url<'a, 'b>(node: &'a Node<'b>, excluded_class: &str, title: &String) -> Vec<serde_json::Value> {
+    let urls: Vec<serde_json::Value>;
     if excluded_class.len() > 0 {
         urls = node.find(Name("a"))
             .filter(|n| {
                 n.attr("href").is_some() && (n.attr("class").is_none() || !n.attr("class").unwrap().contains(excluded_class))
             })
-            .filter(|n|n.attr("rel").is_some()&&n.attr("rel").unwrap().contains(title))
+            .filter(|n| n.attr("rel").is_some() && n.attr("rel").unwrap().contains(title))
             .map(|n| {
                 let url = n.attr("href").unwrap().to_owned();
                 let inner_html = n.text();
-                (url, inner_html)
+
+                let link = Link { url, name: inner_html };
+                serde_json::to_value(link).unwrap()
             })
             .collect();
     } else {
         urls = node.find(Name("a"))
             .filter(|n| n.attr("href").is_some())
-            .filter(|n|n.attr("rel").is_some()&&n.attr("rel").unwrap().contains(title))
+            .filter(|n| n.attr("rel").is_some() && n.attr("rel").unwrap().contains(title))
             .map(|n| {
                 let url = n.attr("href").unwrap().to_owned();
                 let inner_html = n.text();
-                (url, inner_html)
+
+                let link = Link { url, name: inner_html };
+                serde_json::to_value(link).unwrap()
             })
             .collect();
     }
 
-    let mut vec: Vec<(String,String)> = Vec::new();
-    for (url, inner_html) in urls {
+    let mut vec: Vec<serde_json::Value> = Vec::new();
+    for link in urls {
+        let link_str = link.to_string();
+        let json_value: serde_json::Value = serde_json::from_str(&link_str).unwrap();
+        vec.push(json_value);
         
-        if !check_text_contains_filter(&url, filters) {
-            if !vec.iter().any(|(existing_url,_)| existing_url == &url) {
-                vec.push((url,inner_html));
-            }
-        }
     }
     vec
 }
-
 
 pub fn find_url_include<'a, 'b>(node: &'a Node<'b>, included_class: &str) -> Vec<String> {
     let urls:Vec<&str>;
